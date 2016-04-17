@@ -15,6 +15,11 @@ app.get('/scrape', function(req, res){
 
 console.log(scrape("3/27/2016"))
 
+// function getJson(date, callback) {
+// 	var json = { date : "", jewishHistory : "", jewishThought : ""};
+// 	callback(date, json)
+// }
+
 function scrape(date) {
 	console.log("in scrape")
 	url = 'http://www.chabad.org/calendar/view/day.asp?tdate=' + date;
@@ -26,7 +31,7 @@ function scrape(date) {
 
 	var json = { date : "", jewishHistory : "", jewishThought : ""};
 
-    request(url, function(error, response, html){
+    return request(url, function(error, response, html){
 
         // First we'll check to make sure no errors occurred when making the request
 
