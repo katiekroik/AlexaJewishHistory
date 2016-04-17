@@ -71,7 +71,6 @@ function parseChabadJson(html) {
       });
       return json;
     }
-
     var ret = {};
     ret = getJewishHistory(ret);
     ret = getDailyThought(ret);
