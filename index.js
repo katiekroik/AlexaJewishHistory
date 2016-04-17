@@ -227,7 +227,6 @@ function handleDateRequest(intent, session, response){
             // }
             cardContent = cardContent + events.jewishHistory;
             speechText = "<p>" + speechText + events.jewishHistory + "</p> ";
-            speechText = speechText + " <p>Wanna go deeper in history?</p>";
             var speechOutput = {
                 speech: "<speak>" + prefixContent + speechText + "</speak>",
                 type: AlexaSkill.speechOutputType.SSML
@@ -258,7 +257,10 @@ function handleThoughtRequest(intent, session, response){
     if (daySlot && daySlot.value) {
         date = new Date(daySlot.value);
     } else {
-        date = new Date();
+        var myDay = Math.floor(Math.random()*28 + 1);
+        var myMonth = Math.floor(Math.random()*12 + 1);
+        var myYear = Math.floor(Math.random()*2 + 2013);
+        date = new Date(myYear, myMonth, myDay);
     }
 
 	var mo = date.getMonth() + 1;
@@ -326,38 +328,40 @@ function translateDate(date) {
  * Gets a poster prepares the speech to reply to the user.
  */
 function handleFirstEventRequest(intent, session, response) {
-    var daySlot = intent.slots.day;
-    var repromptText = "With History Buff, you can get historical events for any day of the year.  For example, you could say today, or August thirtieth. Now, which day do you want?";
+   var daySlot = intent.slots.day;
+    var repromptText = "With Jewish History Buff, you can get the thought of the day.  For example, you could say today, or August thirtieth. Now, which day do you want?";
     var monthNames = ["January", "February", "March", "April", "May", "June",
                       "July", "August", "September", "October", "November", "December"
     ];
     var sessionAttributes = {};
     // Read the first 3 events, then set the count to 3
     sessionAttributes.index = paginationSize;
-    var jsDate = "";
+    var date;
 
     // If the user provides a date, then use that, otherwise use today
     // The date is in server time, not in the user's time zone. So "today" for the user may actually be tomorrow
     if (daySlot && daySlot.value) {
-        jsDate = new Date(daySlot.value);
+        date = new Date(daySlot.value);
     } else {
-        jsDate = new Date();
+        date = new Date();
     }
 
-	var mo = date.getMonth() + 1;
+    var mo = date.getMonth() + 1;
     var da = date.getDate();
     var yr = date.getFullYear();
     
     // date = translateDate(date);
     console.log(mo, da, yr);
     date = mo + '/' + da + '/' + yr;
+    // var prefixContent = "<p>For " + monthNames[date.getMonth()] + " " + date.getDate() + ", </p>";
+    var cardContent = "For " + date + ", ";
+    
+    var prefixContent = "<p>For " + date + ", </p>";
 
-    var prefixContent = "<p>For " + monthNames[date.getMonth()] + " " + date.getDate() + ", </p>";
-    var cardContent = "For " + monthNames[date.getMonth()] + " " + date.getDate() + ", ";
-
-    var cardTitle = "Events on " + monthNames[date.getMonth()] + " " + date.getDate();
+    var cardTitle = "Events on " + date;
 
     getJsonEventsFromChabad(date, function (events) {
+        console.log(events);
         var speechText = "",
             i;
         sessionAttributes.text = events;
@@ -367,11 +371,12 @@ function handleFirstEventRequest(intent, session, response) {
             cardContent = speechText;
             response.tell(speechText);
         } else {
-            for (i = 0; i < paginationSize; i++) {
-                cardContent = cardContent + events[i] + " ";
-                speechText = "<p>" + speechText + events[i] + "</p> ";
-            }
-            speechText = speechText + " <p>Wanna go deeper in history?</p>";
+            // for (i = 0; i < paginationSize; i++) {
+            //     cardContent = cardContent + events[i] + " ";
+            //     speechText = "<p>" + speechText + events[i] + "</p> ";
+            // }
+            cardContent = cardContent + events.jewishThought;
+            speechText = "<p>" + speechText + events.jewishThought + "</p> ";
             var speechOutput = {
                 speech: "<speak>" + prefixContent + speechText + "</speak>",
                 type: AlexaSkill.speechOutputType.SSML
@@ -493,33 +498,26 @@ function parseChabadJson(html) {
 
     function getJewishHistory(json) {
       $('#JewishHistoryBody0').filter(function() {
-          var data = $(this);
+        var data = $(this).text();
 
-          var c = data.first().children();
+        var jh = data.split('Link:')[0];
+        jh = jh.split('Links:')[0];
+        jh = jh.replace(/\r/g, '').replace(/\n/g, '').replace(/\./g, '. ');
 
-          var jh = "";
-          for (var i = 0; i < c.length; i++) {
-              // console.log(c[i].children[0].data)
-              jh += c[i].children[0].data + " "; 
-          }
-
-          json.jewishHistory = jh;
+        json.jewishHistory = jh;
       });
       return json;
     }
 
     function getDailyThought(json) {
       $('#DailyThoughtBody0').filter(function() {
-          var data = $(this);
+        var data = $(this).text();
 
-          var c = data.first().children();
+        var thought = data.split('Link:')[0];
+        thought = thought.split('Links:')[0];
+        thought = thought.replace(/\r/g, '').replace(/\n/g, '').replace(/\./g, '. ').replace(/\t/g, '');
 
-          var thought = "";
-          for (var i = 0; i < c.length; i++) {
-              // console.log(c[i].children[0].data)
-              thought += c[i].children[0].data + " "; 
-          }          
-          json.jewishThought = thought;
+        json.jewishThought = thought;
         console.log(json.jewishThought);
 
       });
@@ -527,8 +525,8 @@ function parseChabadJson(html) {
     }
 
     var ret = {};
-    ret = getJewishHistory(ret);
-    ret = getDailyThought(ret);
+    getJewishHistory(ret);
+    getDailyThought(ret);
     return ret;
 }
 
