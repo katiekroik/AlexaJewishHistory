@@ -277,6 +277,25 @@ function getJsonEventsFromWikipedia(day, date, eventCallback) {
     });
 }
 
+function getJsonEventsFromChabad(date, eventCallback) {
+    var url = 'http://www.chabad.org/calendar/view/day.asp?tdate=' + date;
+
+    https.get(url, function(res) {
+        var body = '';
+
+        res.on('data', function (chunk) {
+            body += chunk;
+        });
+
+        res.on('end', function () {
+            var stringResult = parseJson(body);
+            eventCallback(stringResult);
+        });
+    }).on('error', function (e) {
+        console.log("Got error: ", e);
+    });
+}
+
 function parseJson(inputText) {
     // sizeOf (/nEvents/n) is 10
     var text = inputText.substring(inputText.indexOf("\\nEvents\\n")+10, inputText.indexOf("\\n\\n\\nBirths")),
@@ -308,6 +327,64 @@ function parseJson(inputText) {
     }
     retArr.reverse();
     return retArr;
+}
+
+function parseChabadJson(inputText) {
+    // sizeOf (/nEvents/n) is 10
+
+    var json = { date : "", jewishHistory : "", jewishThought : ""};
+
+    var $ = cheerio.load(inputText);
+
+    function getJewishHistory(json) {
+        $('#JewishHistoryBody0').filter(function() {
+            var data = $(this);
+
+            var c = data.first().children()
+
+            var jh = "";
+            for (var i = 0; i < c.length; i++) {
+                // console.log(c[i].children[0].data)
+                jh += c[i].children[0].data + " "; 
+            }
+
+            json.jewishHistory = jh;
+            // console.log("Done with Jewish History");
+        });
+    }
+
+    function getDailyThough(json, callback) {
+        $('#DailyThoughtBody0').filter(function() {
+            var data = $(this);
+
+            var c = data.first().children()
+
+            var thought = "";
+            for (var i = 0; i < c.length; i++) {
+                // console.log(c[i].children[0].data)
+                thought += c[i].children[0].data + " "; 
+            }
+
+            json.jewishThought = thought;
+
+            callback(json)
+        });
+
+    }
+
+    function fillJson(callback, callbackTwo) {
+
+        json.date = date;
+        if (json.date) {
+            callback(json, callbackTwo) 
+            if (json.jewishHistory && json.jewishThought) {
+                // console.log(json)
+                return json;
+            }
+        }               
+    }
+
+    return json;
 }
 
 // Create the handler that responds to the Alexa Request.
