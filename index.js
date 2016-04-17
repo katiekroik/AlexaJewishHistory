@@ -255,7 +255,7 @@ function handleThoughtRequest(intent, session, response){
     } else {
         var myDay = Math.floor(Math.random()*28 + 1);
         var myMonth = Math.floor(Math.random()*12 + 1);
-        var myYear = Math.floor(Math.random()*1 + 2016);
+        var myYear = Math.floor(Math.random()*2 + 2013);
         date = new Date(myYear, myMonth, myDay);
     }
 
@@ -468,16 +468,13 @@ function parseChabadJson(html) {
 
     function getDailyThought(json) {
       $('#DailyThoughtBody0').filter(function() {
-          var data = $(this);
+        var data = $(this).text();
 
-          var c = data.first().children();
+        var thought = data.split('Link:')[0];
+        thought = thought.split('Links:')[0];
+        thought = thought.replace(/\r/g, '').replace(/\n/g, '').replace(/\./g, '. ').replace(/\t/g, '');
 
-          var thought = "";
-          for (var i = 0; i < c.length; i++) {
-              // console.log(c[i].children[0].data)
-              thought += c[i].children[0].data + " "; 
-          }          
-          json.jewishThought = thought;
+        json.jewishThought = thought;
         console.log(json.jewishThought);
 
       });
