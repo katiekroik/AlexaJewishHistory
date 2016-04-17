@@ -40,17 +40,28 @@ function parseChabadJson(html) {
 
     function getJewishHistory(json) {
       $('#JewishHistoryBody0').filter(function() {
-          var data = $(this);
+          var data = $(this).text();
 
-          var c = data.first().children();
+          // var c = data.first().children();
 
-          var jh = "";
-          for (var i = 0; i < c.length; i++) {
-              // console.log(c[i].children[0].data)
-              jh += c[i].children[0].data + " "; 
-          }
+          // var jh = "";
+          // var i = 0;
+          // var child = c[i].children;
+          // while(child[data]) {
+          // 	console.log(child.data)
+          // 	jh += c[i].children.data + " ";
+          // 	child[data] = child[data].next
+          // }
+          // for (var i = 0; i < c.length; i++) {
+          //     // console.log(c[i].children[0].data)
+          //     console.log(c[i].children[0]);
 
-          json.jewishHistory = jh;
+
+
+          //     jh += c[i].children.data + " "; 
+          // }
+
+          json.jewishHistory = data;
       });
       return json;
     }
@@ -64,6 +75,7 @@ function parseChabadJson(html) {
           var thought = "";
           for (var i = 0; i < c.length; i++) {
               // console.log(c[i].children[0].data)
+              // console.log(c[i])
               thought += c[i].children[0].data + " "; 
           }
 
@@ -82,7 +94,7 @@ app.listen('8081');
 
 console.log('Magic happens on port 8081');
 
-getJsonEventsFromChabad("3/27/2016", function (json) {
+getJsonEventsFromChabad("4/17/2016", function (json) {
   console.log(json);
 /*    var speechText = "",
         i;
