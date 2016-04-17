@@ -223,7 +223,6 @@ function handleDateRequest(intent, session, response){
             // }
             cardContent = cardContent + events.jewishHistory;
             speechText = "<p>" + speechText + events.jewishHistory + "</p> ";
-            speechText = speechText + " <p>Wanna go deeper in history?</p>";
             var speechOutput = {
                 speech: "<speak>" + prefixContent + speechText + "</speak>",
                 type: AlexaSkill.speechOutputType.SSML
@@ -254,7 +253,10 @@ function handleThoughtRequest(intent, session, response){
     if (daySlot && daySlot.value) {
         date = new Date(daySlot.value);
     } else {
-        date = new Date();
+        var myDay = Math.floor(Math.random()*28 + 1);
+        var myMonth = Math.floor(Math.random()*12 + 1);
+        var myYear = Math.floor(Math.random()*1 + 2016);
+        date = new Date(myYear, myMonth, myDay);
     }
 
 	var mo = date.getMonth() + 1;
