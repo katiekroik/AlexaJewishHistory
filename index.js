@@ -371,7 +371,6 @@ function handleFirstEventRequest(intent, session, response) {
             // }
             cardContent = cardContent + events.jewishThought;
             speechText = "<p>" + speechText + events.jewishThought + "</p> ";
-            speechText = speechText + " <p>Wanna go deeper in history?</p>";
             var speechOutput = {
                 speech: "<speak>" + prefixContent + speechText + "</speak>",
                 type: AlexaSkill.speechOutputType.SSML
