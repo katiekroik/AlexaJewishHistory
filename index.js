@@ -132,6 +132,10 @@ HistoryBuffSkill.prototype.intentHandlers = {
 		handleDateRequest(intent, session, response);
 	},
 
+    "GetTextIntent": function(intent, session, response){
+        handleTextRequest(intent, session, response);
+    },
+
     "AMAZON.StopIntent": function (intent, session, response) {
         var speechOutput = {
                 speech: "Goodbye",
@@ -422,6 +426,45 @@ function handleFirstEventRequest(intent, session, response) {
 //     };
 //     response.askWithCard(speechOutput, repromptOutput, cardTitle, cardContent);
 // }
+
+
+/*
+    I think this might work? Can someone test check?
+*/
+function handleTextRequest(intent, session, response){
+    console.log('hello');
+    // console.log(JSON.stringify(intent.slot));
+    // response.askWithCard('hi', 'repromptOutput', 'cardTitle', 'cardContent');
+
+
+    getJsonVerse(intent.slots.book.value, intent.slots.chapter.value, intent.slots.verse.value, response);
+}
+
+function getJsonVerse(book, chapter, verse, response){
+    var url = "http://www.sefaria.org/api/texts" + book + '.' + chapter + '.' + verse + '?context=0';
+    http.get(url, function(res){
+        console.log('res.text:' ,res.text);
+        console.log('res.query:' ,res.query);
+
+        function callback(){
+            var speechOutput = {
+                speech: "<speak>" + 'Genesis, chapter one, verse one: In the beginning God created the heaven and the earth.' + "</speak>",
+                type: AlexaSkill.speechOutputType.SSML
+            };
+            var repromptOutput = {
+                speech: 'Please repeat the book, chapter, and verse you want to find',
+                type: AlexaSkill.speechOutputType.PLAIN_TEXT
+            };
+            var cardTitle = "Chapter";
+
+            cardContent = 'Genesis';
+            response.askWithCard(speechOutput, repromptOutput, cardTitle, cardContent);
+        }
+        callback();
+        // response.askWithCard(speechOutput, repromptOutput, cardTitle, cardContent);
+        // return res.text;
+    });
+}
 
 function getJsonEventsFromChabad(date, eventCallback) {
     var url = 'http://www.chabad.org/calendar/view/day.asp?tdate=' + date;
