@@ -453,18 +453,13 @@ function parseChabadJson(html) {
 
     function getJewishHistory(json) {
       $('#JewishHistoryBody0').filter(function() {
-          var data = $(this);
+        var data = $(this).text();
 
-          var c = data.first().children();
+        var jh = data.split('Link:')[0];
+        jh = jh.split('Links:')[0];
+        jh = jh.replace(/\r/g, '').replace(/\n/g, '').replace(/\./g, '. ');
 
-          var jh = "";
-          for (var i = 0; i < c.length; i++) {
-              // console.log(c[i].children[0].data)
-              jh += c[i].children[0].data + " "; 
-          }
-
-          json.jewishHistory = jh;
-          console.log(jh)
+        json.jewishHistory = jh;
       });
       return json;
     }
