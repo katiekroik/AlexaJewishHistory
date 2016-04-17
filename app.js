@@ -13,7 +13,7 @@ app.get('/scrape', function(req, res){
   // scrape(3/27/2016)
 });
 
-scrape("3/27/2016")
+console.log(scrape("3/27/2016"))
 
 function scrape(date) {
 	console.log("in scrape")
@@ -29,37 +29,63 @@ function scrape(date) {
         // First we'll check to make sure no errors occurred when making the request
 
         if(!error){
-            // Next, we'll utilize the cheerio library on the returned html which will essentially give us jQuery functionality
 
             var $ = cheerio.load(html);
 
-            // Finally, we'll define the variables we're going to capture
+            function getJewishHistory(json) {
+            	$('#JewishHistoryBody0').filter(function() {
+	            	var data = $(this);
 
-            var title, release, rating;
-            var json = { title : "", release : "", rating : ""};
+	           		var c = data.first().children()
 
-            $('#JewishHistoryBody0').filter(function() {
-            	var data = $(this);
-                console.log("DATA", data);
+	           		var jh = "";
+	           		for (var i = 0; i < c.length; i++) {
+	           			// console.log(c[i].children[0].data)
+	           			jh += c[i].children[0].data + " "; 
+	           		}
 
-           // In examining the DOM we notice that the title rests within the first child element of the header tag. 
-           // Utilizing jQuery we can easily navigate and get the text by writing the following code:
-           		var c = data.first().children()
-           		console.log("CHILDREN", c)
-           		c.forEach(function(child) {
-           			console.log(child.text);
-           		})
-                // title = data.children().first().text();
+	                json.jewishHistory = jh;
+	                // console.log("Done with Jewish History");
+	            });
+            }
 
-           // Once we have our title, we'll store it to the our json object.
+            function getDailyThough(json, callback) {
+            	$('#DailyThoughtBody0').filter(function() {
+	            	var data = $(this);
 
-                // json.title = title;
-                // console.log(title);
-            });
+	           		var c = data.first().children()
 
+	           		var thought = "";
+	           		for (var i = 0; i < c.length; i++) {
+	           			// console.log(c[i].children[0].data)
+	           			thought += c[i].children[0].data + " "; 
+	           		}
 
+	                json.jewishThought = thought;
+
+	                callback(json)
+	            });
+
+            }
+
+            function fillJson(callback, callbackTwo) {
+            	var json = { date : "", jewishHistory : "", jewishThought : ""};
+
+            	json.date = date;
+            	if (json.date) {
+					callback(json, callbackTwo)
+					return json;
+
+            	}
+            	// console.log("JH", json.jewishHistory, "JT", json.jewishThought)
+            }
+
+            return fillJson(getDailyThough, getJewishHistory)
         }
-    })
+
+
+
+    });
 
 }
 
