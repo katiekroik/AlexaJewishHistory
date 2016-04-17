@@ -3,6 +3,7 @@ var fs = require('fs');
 var request = require('request');
 var cheerio = require('cheerio');
 var app     = express();
+var http = require('http');
 
 app.get('/scrape', function(req, res){
 
@@ -13,10 +14,78 @@ app.get('/scrape', function(req, res){
   // scrape(3/27/2016)
 });
 
-console.log(scrape("3/27/2016"))
+function getJsonEventsFromChabad(date, eventCallback) {
+    var url = 'http://www.chabad.org/calendar/view/day.asp?tdate=' + date;
 
-getJsonEventsFromChabad(monthNames[date.getMonth()], date.getDate(), function (events) {
-    var speechText = "",
+    http.get(url, function(res) {
+        var body = '';
+
+        res.on('data', function (chunk) {
+            body += chunk;
+        });
+
+        res.on('end', function () {
+            var stringResult = parseChabadJson(body);
+            eventCallback(stringResult);
+        });
+    }).on('error', function (e) {
+        console.log("Got error: ", e);
+    });
+}
+
+function parseChabadJson(html) {
+    var json = { date : "", jewishHistory : "", jewishThought : ""};
+
+    var $ = cheerio.load(html);
+
+    function getJewishHistory(json) {
+      $('#JewishHistoryBody0').filter(function() {
+          var data = $(this);
+
+          var c = data.first().children();
+
+          var jh = "";
+          for (var i = 0; i < c.length; i++) {
+              // console.log(c[i].children[0].data)
+              jh += c[i].children[0].data + " "; 
+          }
+
+          json.jewishHistory = jh;
+      });
+      return json;
+    }
+
+    function getDailyThought(json) {
+      $('#DailyThoughtBody0').filter(function() {
+          var data = $(this);
+
+          var c = data.first().children();
+
+          var thought = "";
+          for (var i = 0; i < c.length; i++) {
+              // console.log(c[i].children[0].data)
+              thought += c[i].children[0].data + " "; 
+          }
+
+          json.jewishThought = thought;
+      });
+      return json;
+    }
+
+    var ret = {};
+    ret = getJewishHistory(ret);
+    ret = getDailyThought(ret);
+    return ret;
+}
+
+
+app.listen('8081');
+
+console.log('Magic happens on port 8081');
+
+getJsonEventsFromChabad("3/27/2016", function (json) {
+  console.log(json);
+/*    var speechText = "",
         i;
     sessionAttributes.text = events;
     session.attributes = sessionAttributes;
@@ -40,167 +109,7 @@ getJsonEventsFromChabad(monthNames[date.getMonth()], date.getDate(), function (e
         };
         response.askWithCard(speechOutput, repromptOutput, cardTitle, cardContent);
     }
+*/
 });
-
-function getJsonEventsFromChabad(date, eventCallback) {
-    var url = 'http://www.chabad.org/calendar/view/day.asp?tdate=' + date;
-
-    https.get(url, function(res) {
-        var body = '';
-
-        res.on('data', function (chunk) {
-            body += chunk;
-        });
-
-        res.on('end', function () {
-            var stringResult = parseJson(body);
-            eventCallback(stringResult);
-        });
-    }).on('error', function (e) {
-        console.log("Got error: ", e);
-    });
-}
-
-function parseChabadJson(inputText) {
-    // sizeOf (/nEvents/n) is 10
-
-    var json = { date : "", jewishHistory : "", jewishThought : ""};
-
-    var $ = cheerio.load(inputText);
-
-    function getJewishHistory(json) {
-        $('#JewishHistoryBody0').filter(function() {
-            var data = $(this);
-
-            var c = data.first().children()
-
-            var jh = "";
-            for (var i = 0; i < c.length; i++) {
-                // console.log(c[i].children[0].data)
-                jh += c[i].children[0].data + " "; 
-            }
-
-            json.jewishHistory = jh;
-            // console.log("Done with Jewish History");
-        });
-    }
-
-    function getDailyThough(json, callback) {
-        $('#DailyThoughtBody0').filter(function() {
-            var data = $(this);
-
-            var c = data.first().children()
-
-            var thought = "";
-            for (var i = 0; i < c.length; i++) {
-                // console.log(c[i].children[0].data)
-                thought += c[i].children[0].data + " "; 
-            }
-
-            json.jewishThought = thought;
-
-            callback(json)
-        });
-
-    }
-
-    function fillJson(callback, callbackTwo) {
-
-        json.date = date;
-        if (json.date) {
-            callback(json, callbackTwo) 
-            if (json.jewishHistory && json.jewishThought) {
-                // console.log(json)
-                return json;
-            }
-        }               
-    }
-
-    return json;
-}
-
-
-// function getJson(date, callback) {
-// 	var json = { date : "", jewishHistory : "", jewishThought : ""};
-// 	callback(date, json)
-// }
-
-function scrape(date) {
-	console.log("in scrape")
-	url = 'http://www.chabad.org/calendar/view/day.asp?tdate=' + date;
-
-	console.log(url)
-    // The structure of our request call
-    // The first parameter is our URL
-    // The callback function takes 3 parameters, an error, response status code and the html
-
-	var json = { date : "", jewishHistory : "", jewishThought : ""};
-
-    return request(url, function(error, response, html){
-
-        // First we'll check to make sure no errors occurred when making the request
-
-        if(!error){
-
-            var $ = cheerio.load(html);
-
-            function getJewishHistory(json) {
-            	$('#JewishHistoryBody0').filter(function() {
-	            	var data = $(this);
-
-	           		var c = data.first().children()
-
-	           		var jh = "";
-	           		for (var i = 0; i < c.length; i++) {
-	           			// console.log(c[i].children[0].data)
-	           			jh += c[i].children[0].data + " "; 
-	           		}
-
-	                json.jewishHistory = jh;
-	                // console.log("Done with Jewish History");
-	            });
-            }
-
-            function getDailyThough(json, callback) {
-            	$('#DailyThoughtBody0').filter(function() {
-	            	var data = $(this);
-
-	           		var c = data.first().children()
-
-	           		var thought = "";
-	           		for (var i = 0; i < c.length; i++) {
-	           			// console.log(c[i].children[0].data)
-	           			thought += c[i].children[0].data + " "; 
-	           		}
-
-	                json.jewishThought = thought;
-
-	                callback(json)
-	            });
-
-            }
-
-            function fillJson(callback, callbackTwo) {
-
-            	json.date = date;
-            	if (json.date) {
-					callback(json, callbackTwo)	
-					if (json.jewishHistory && json.jewishThought) {
-						// console.log(json)
-						return json;
-					}
-            	}            	
-            }
-
-            return fillJson(getDailyThough, getJewishHistory)
-        }
-
-    });
-
-}
-
-app.listen('8081')
-
-console.log('Magic happens on port 8081');
 
 exports = module.exports = app;
