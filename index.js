@@ -41,6 +41,9 @@
 var APP_ID = undefined; //replace with 'amzn1.echo-sdk-ams.app.[your-unique-value-here]';
 
 var https = require('https');
+var http = require('http');
+var cheerio = require('cheerio');
+var index = require('index');
 
 /**
  * The AlexaSkill Module that has the AlexaSkill prototype and helper functions
@@ -61,6 +64,7 @@ var paginationSize = 3;
  * Variable defining the length of the delimiter between events
  */
 var delimiterSize = 2;
+
 
 /**
  * HistoryBuffSkill is a child of AlexaSkill.
@@ -98,12 +102,12 @@ HistoryBuffSkill.prototype.eventHandlers.onSessionEnded = function (sessionEnded
 HistoryBuffSkill.prototype.intentHandlers = {
 
     "GetFirstEventIntent": function (intent, session, response) {
-        handleThoughtRequest(intent, session, response);
+        handleDateRequest(intent, session, response);
     },
 
-    "GetNextEventIntent": function (intent, session, response) {
-        handleNextEventRequest(intent, session, response);
-    },
+    // "GetNextEventIntent": function (intent, session, response) {
+    //     handleNextEventRequest(intent, session, response);
+    // },
 
     "AMAZON.HelpIntent": function (intent, session, response) {
         var speechText = "With Jewish History, you can get historical events for any day of the year.  " +
@@ -178,7 +182,7 @@ function handleDateRequest(intent, session, response){
     var sessionAttributes = {};
     // Read the first 3 events, then set the count to 3
     sessionAttributes.index = paginationSize;
-    var date = "";
+    var date;
 
     // If the user provides a date, then use that, otherwise use today
     // The date is in server time, not in the user's time zone. So "today" for the user may actually be tomorrow
@@ -188,53 +192,51 @@ function handleDateRequest(intent, session, response){
         date = new Date();
     }
 
-    var prefixContent = "<p>For " + monthNames[date.getMonth()] + " " + date.getDate() + ", </p>";
-    var cardContent = "For " + monthNames[date.getMonth()] + " " + date.getDate() + ", ";
+    var mo = date.getMonth() + 1;
+    var da = date.getDate();
+    var yr = date.getFullYear();
 
-    var cardTitle = "Events on " + monthNames[date.getMonth()] + " " + date.getDate();
+    // date = translateDate(date);
+    console.log(mo, da, yr);
+    date = mo + '/' + da + '/' + yr;
+    // var prefixContent = "<p>For " + monthNames[date.getMonth()] + " " + date.getDate() + ", </p>";
+    var cardContent = "For " + date + ", ";
 
-    // getJsonEventsFromWikipedia(monthNames[date.getMonth()], date.getDate(), function (events) {
-//         var speechText = "",
-//             i;
-//         sessionAttributes.text = events;
-//         session.attributes = sessionAttributes;
-//         if (events.length == 0) {
-//             speechText = "There is a problem connecting to Chabad.org at this time. Please try again later.";
-//             cardContent = speechText;
-//             response.tell(speechText);
-//         } else {
-//             for (i = 0; i < paginationSize; i++) {
-//                 cardContent = cardContent + events[i] + " ";
-//                 speechText = "<p>" + speechText + events[i] + "</p> ";
-//             }
-//             speechText = speechText + " <p>Wanna go deeper in history?</p>";
-//             var speechOutput = {
-//                 speech: "<speak>" + prefixContent + speechText + "</speak>",
-//                 type: AlexaSkill.speechOutputType.SSML
-//             };
-//             var repromptOutput = {
-//                 speech: repromptText,
-//                 type: AlexaSkill.speechOutputType.PLAIN_TEXT
-//             };
-//             response.askWithCard(speechOutput, repromptOutput, cardTitle, cardContent);
-//         }
-//     });
+    var prefixContent = "<p>For " + date + ", </p>";
 
-	function helloWorld() {
-		var speechOutput={
-			speech: "<speak>" + prefixContent + speechText + "</speak>",
-            type: AlexaSkill.speechOutputType.SSML
-		};
-		var repromptOutput = {
-		         speech: repromptText,
-		         type: AlexaSkill.speechOutputType.PLAIN_TEXT
-		};
-	}
+    var cardTitle = "Events on " + date;
+
+    getJsonEventsFromChabad(date, function (events) {
+        console.log(events);
+        var speechText = "",
+            i;
+        sessionAttributes.text = events;
+        session.attributes = sessionAttributes;
+        if (events.length == 0) {
+            speechText = "There is a problem connecting to Chabad.org at this time. Please try again later.";
+            cardContent = speechText;
+            response.tell(speechText);
+        } else {
+            // for (i = 0; i < paginationSize; i++) {
+            //     cardContent = cardContent + events[i] + " ";
+            //     speechText = "<p>" + speechText + events[i] + "</p> ";
+            // }
+            cardContent = cardContent + events.jewishHistory;
+            speechText = "<p>" + speechText + events.jewishHistory + "</p> ";
+            speechText = speechText + " <p>Wanna go deeper in history?</p>";
+            var speechOutput = {
+                speech: "<speak>" + prefixContent + speechText + "</speak>",
+                type: AlexaSkill.speechOutputType.SSML
+            };
+            var repromptOutput = {
+                speech: repromptText,
+                type: AlexaSkill.speechOutputType.PLAIN_TEXT
+            };
+            response.askWithCard(speechOutput, repromptOutput, cardTitle, cardContent);
+        }
+    });
 
 }
-
-
-
 
 function handleThoughtRequest(intent, session, response){
     var daySlot = intent.slots.day;
@@ -245,7 +247,7 @@ function handleThoughtRequest(intent, session, response){
     var sessionAttributes = {};
     // Read the first 3 events, then set the count to 3
     sessionAttributes.index = paginationSize;
-    var date = "";
+    var date;
 
     // If the user provides a date, then use that, otherwise use today
     // The date is in server time, not in the user's time zone. So "today" for the user may actually be tomorrow
@@ -255,12 +257,103 @@ function handleThoughtRequest(intent, session, response){
         date = new Date();
     }
 
+	var mo = date.getMonth() + 1;
+	var da = date.getDate();
+	var yr = date.getFullYear();
+	
+	// date = translateDate(date);
+	console.log(mo, da, yr);
+	date = mo + '/' + da + '/' + yr;
+    // var prefixContent = "<p>For " + monthNames[date.getMonth()] + " " + date.getDate() + ", </p>";
+    var cardContent = "For " + date + ", ";
+	
+	var prefixContent = "<p>For " + date + ", </p>";
+
+    var cardTitle = "Events on " + date;
+
+    getJsonEventsFromChabad(date, function (events) {
+        console.log(events);
+        var speechText = "",
+            i;
+        sessionAttributes.text = events;
+        session.attributes = sessionAttributes;
+        if (events.length == 0) {
+            speechText = "There is a problem connecting to Chabad.org at this time. Please try again later.";
+            cardContent = speechText;
+            response.tell(speechText);
+        } else {
+            // for (i = 0; i < paginationSize; i++) {
+            //     cardContent = cardContent + events[i] + " ";
+            //     speechText = "<p>" + speechText + events[i] + "</p> ";
+            // }
+            cardContent = cardContent + events.jewishThought;
+            speechText = "<p>" + speechText + events.jewishThought + "</p> ";
+            speechText = speechText + " <p>Wanna go deeper in history?</p>";
+            var speechOutput = {
+                speech: "<speak>" + prefixContent + speechText + "</speak>",
+                type: AlexaSkill.speechOutputType.SSML
+            };
+            var repromptOutput = {
+                speech: repromptText,
+                type: AlexaSkill.speechOutputType.PLAIN_TEXT
+            };
+            response.askWithCard(speechOutput, repromptOutput, cardTitle, cardContent);
+        }
+    });
+}
+
+function translateDate(date) {
+	var dd = date.getDate();
+	var mm = date.getMonth() + 1;
+	
+	var yyyy = date.getFullYear();
+	
+	if (dd < 10) {
+		dd = "0" + dd;
+	} 
+	if (mm < 10) {
+		mm = "0" + mm;
+	}
+	date = dd + '/' + mm + '/' + yyyy;
+	return date;
+}
+
+/**
+ * Gets a poster prepares the speech to reply to the user.
+ */
+function handleFirstEventRequest(intent, session, response) {
+    var daySlot = intent.slots.day;
+    var repromptText = "With History Buff, you can get historical events for any day of the year.  For example, you could say today, or August thirtieth. Now, which day do you want?";
+    var monthNames = ["January", "February", "March", "April", "May", "June",
+                      "July", "August", "September", "October", "November", "December"
+    ];
+    var sessionAttributes = {};
+    // Read the first 3 events, then set the count to 3
+    sessionAttributes.index = paginationSize;
+    var jsDate = "";
+
+    // If the user provides a date, then use that, otherwise use today
+    // The date is in server time, not in the user's time zone. So "today" for the user may actually be tomorrow
+    if (daySlot && daySlot.value) {
+        jsDate = new Date(daySlot.value);
+    } else {
+        jsDate = new Date();
+    }
+
+	var mo = date.getMonth() + 1;
+    var da = date.getDate();
+    var yr = date.getFullYear();
+    
+    // date = translateDate(date);
+    console.log(mo, da, yr);
+    date = mo + '/' + da + '/' + yr;
+
     var prefixContent = "<p>For " + monthNames[date.getMonth()] + " " + date.getDate() + ", </p>";
     var cardContent = "For " + monthNames[date.getMonth()] + " " + date.getDate() + ", ";
 
     var cardTitle = "Events on " + monthNames[date.getMonth()] + " " + date.getDate();
 
-    getJsonEventsFromChabad(date.getDate(), function (events) {
+    getJsonEventsFromChabad(date, function (events) {
         var speechText = "",
             i;
         sessionAttributes.text = events;
@@ -291,99 +384,44 @@ function handleThoughtRequest(intent, session, response){
 /**
  * Gets a poster prepares the speech to reply to the user.
  */
-function handleFirstEventRequest(intent, session, response) {
-    var daySlot = intent.slots.day;
-    var repromptText = "With History Buff, you can get historical events for any day of the year.  For example, you could say today, or August thirtieth. Now, which day do you want?";
-    var monthNames = ["January", "February", "March", "April", "May", "June",
-                      "July", "August", "September", "October", "November", "December"
-    ];
-    var sessionAttributes = {};
-    // Read the first 3 events, then set the count to 3
-    sessionAttributes.index = paginationSize;
-    var date = "";
-
-    // If the user provides a date, then use that, otherwise use today
-    // The date is in server time, not in the user's time zone. So "today" for the user may actually be tomorrow
-    if (daySlot && daySlot.value) {
-        date = new Date(daySlot.value);
-    } else {
-        date = new Date();
-    }
-
-    var prefixContent = "<p>For " + monthNames[date.getMonth()] + " " + date.getDate() + ", </p>";
-    var cardContent = "For " + monthNames[date.getMonth()] + " " + date.getDate() + ", ";
-
-    var cardTitle = "Events on " + monthNames[date.getMonth()] + " " + date.getDate();
-
-    getJsonEventsFromChabad(date.getDate(), function (events) {
-        var speechText = "",
-            i;
-        sessionAttributes.text = events;
-        session.attributes = sessionAttributes;
-        if (events.length == 0) {
-            speechText = "There is a problem connecting to Wikipedia at this time. Please try again later.";
-            cardContent = speechText;
-            response.tell(speechText);
-        } else {
-            for (i = 0; i < paginationSize; i++) {
-                cardContent = cardContent + events[i] + " ";
-                speechText = "<p>" + speechText + events[i] + "</p> ";
-            }
-            speechText = speechText + " <p>Wanna go deeper in history?</p>";
-            var speechOutput = {
-                speech: "<speak>" + prefixContent + speechText + "</speak>",
-                type: AlexaSkill.speechOutputType.SSML
-            };
-            var repromptOutput = {
-                speech: repromptText,
-                type: AlexaSkill.speechOutputType.PLAIN_TEXT
-            };
-            response.askWithCard(speechOutput, repromptOutput, cardTitle, cardContent);
-        }
-    });
-}
-
-/**
- * Gets a poster prepares the speech to reply to the user.
- */
-function handleNextEventRequest(intent, session, response) {
-    var cardTitle = "More events on this day in history",
-        sessionAttributes = session.attributes,
-        result = sessionAttributes.text,
-        speechText = "",
-        cardContent = "",
-        repromptText = "Do you want to know more about what happened on this date?",
-        i;
-    if (!result) {
-        speechText = "With Jewish History, you can get historical events for any day of the year.  For example, you could say today, or August thirtieth. Now, which day do you want?";
-        cardContent = speechText;
-    } else if (sessionAttributes.index >= result.length) {
-        speechText = "There are no more events for this date. Try another date by saying <break time = \"0.3s\"/> get events for august thirtieth.";
-        cardContent = "There are no more events for this date. Try another date by saying, get events for august thirtieth.";
-    } else {
-        for (i = 0; i < paginationSize; i++) {
-            if (sessionAttributes.index>= result.length) {
-                break;
-            }
-            speechText = speechText + "<p>" + result[sessionAttributes.index] + "</p> ";
-            cardContent = cardContent + result[sessionAttributes.index] + " ";
-            sessionAttributes.index++;
-        }
-        if (sessionAttributes.index < result.length) {
-            speechText = speechText + " Wanna go deeper in history?";
-            cardContent = cardContent + " Wanna go deeper in history?";
-        }
-    }
-    var speechOutput = {
-        speech: "<speak>" + speechText + "</speak>",
-        type: AlexaSkill.speechOutputType.SSML
-    };
-    var repromptOutput = {
-        speech: repromptText,
-        type: AlexaSkill.speechOutputType.PLAIN_TEXT
-    };
-    response.askWithCard(speechOutput, repromptOutput, cardTitle, cardContent);
-}
+// function handleNextEventRequest(intent, session, response) {
+//     var cardTitle = "More events on this day in history",
+//         sessionAttributes = session.attributes,
+//         result = sessionAttributes.text,
+//         speechText = "",
+//         cardContent = "",
+//         repromptText = "Do you want to know more about what happened on this date?",
+//         i;
+//     if (!result) {
+//         speechText = "With Jewish History, you can get historical events for any day of the year.  For example, you could say today, or August thirtieth. Now, which day do you want?";
+//         cardContent = speechText;
+//     } else if (sessionAttributes.index >= result.length) {
+//         speechText = "There are no more events for this date. Try another date by saying <break time = \"0.3s\"/> get events for august thirtieth.";
+//         cardContent = "There are no more events for this date. Try another date by saying, get events for august thirtieth.";
+//     } else {
+//         for (i = 0; i < paginationSize; i++) {
+//             if (sessionAttributes.index>= result.length) {
+//                 break;
+//             }
+//             speechText = speechText + "<p>" + result[sessionAttributes.index] + "</p> ";
+//             cardContent = cardContent + result[sessionAttributes.index] + " ";
+//             sessionAttributes.index++;
+//         }
+//         if (sessionAttributes.index < result.length) {
+//             speechText = speechText + " Wanna go deeper in history?";
+//             cardContent = cardContent + " Wanna go deeper in history?";
+//         }
+//     }
+//     var speechOutput = {
+//         speech: "<speak>" + speechText + "</speak>",
+//         type: AlexaSkill.speechOutputType.SSML
+//     };
+//     var repromptOutput = {
+//         speech: repromptText,
+//         type: AlexaSkill.speechOutputType.PLAIN_TEXT
+//     };
+//     response.askWithCard(speechOutput, repromptOutput, cardTitle, cardContent);
+// }
 
 function getJsonEventsFromChabad(date, eventCallback) {
     var url = 'http://www.chabad.org/calendar/view/day.asp?tdate=' + date;
@@ -397,27 +435,7 @@ function getJsonEventsFromChabad(date, eventCallback) {
 
         res.on('end', function () {
             var stringResult = parseChabadJson(body);
-            console.log(stringResult)
-            eventCallback(stringResult);
-        });
-    }).on('error', function (e) {
-        console.log("Got error: ", e);
-    });
-}
-
-
-function getJsonEventsFromWikipedia(day, date, eventCallback) {
-    var url = urlPrefix + day + '_' + date;
-
-    https.get(url, function(res) {
-        var body = '';
-
-        res.on('data', function (chunk) {
-            body += chunk;
-        });
-
-        res.on('end', function () {
-            var stringResult = parseJson(body);
+            console.log(stringResult);
             eventCallback(stringResult);
         });
     }).on('error', function (e) {
@@ -457,9 +475,10 @@ function parseChabadJson(html) {
           for (var i = 0; i < c.length; i++) {
               // console.log(c[i].children[0].data)
               thought += c[i].children[0].data + " "; 
-          }
-
+          }          
           json.jewishThought = thought;
+        console.log(json.jewishThought);
+
       });
       return json;
     }
@@ -468,6 +487,26 @@ function parseChabadJson(html) {
     ret = getJewishHistory(ret);
     ret = getDailyThought(ret);
     return ret;
+}
+
+
+function getJsonEventsFromWikipedia(day, date, eventCallback) {
+    var url = urlPrefix + day + '_' + date;
+
+    https.get(url, function(res) {
+        var body = '';
+
+        res.on('data', function (chunk) {
+            body += chunk;
+        });
+
+        res.on('end', function () {
+            var stringResult = parseJson(body);
+            eventCallback(stringResult);
+        });
+    }).on('error', function (e) {
+        console.log("Got error: ", e);
+    });
 }
 
 function parseJson(inputText) {
@@ -504,7 +543,7 @@ function parseJson(inputText) {
 }
 
 // Create the handler that responds to the Alexa Request.
-exports.handler = function (event, context) {
+index.handler = function (event, context) {
     // Create an instance of the HistoryBuff Skill.
     var skill = new HistoryBuffSkill();
     skill.execute(event, context);
