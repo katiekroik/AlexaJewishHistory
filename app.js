@@ -24,6 +24,8 @@ function scrape(date) {
     // The first parameter is our URL
     // The callback function takes 3 parameters, an error, response status code and the html
 
+	var json = { date : "", jewishHistory : "", jewishThought : ""};
+
     request(url, function(error, response, html){
 
         // First we'll check to make sure no errors occurred when making the request
@@ -69,21 +71,19 @@ function scrape(date) {
             }
 
             function fillJson(callback, callbackTwo) {
-            	var json = { date : "", jewishHistory : "", jewishThought : ""};
 
             	json.date = date;
             	if (json.date) {
-					callback(json, callbackTwo)
-					return json;
-
-            	}
-            	// console.log("JH", json.jewishHistory, "JT", json.jewishThought)
+					callback(json, callbackTwo)	
+					if (json.jewishHistory && json.jewishThought) {
+						// console.log(json)
+						return json;
+					}
+            	}            	
             }
 
             return fillJson(getDailyThough, getJewishHistory)
         }
-
-
 
     });
 
