@@ -447,6 +447,13 @@ function handleTextRequest(intent, session, response){
 }
 
 function getJsonVerse(book, chapter, verse, response){
+
+    // sanitze books
+
+    /*
+    for kings 1 or kings 2 needs to be i_kings or ii_kings
+    */
+
     var url = "http://www.sefaria.org/api/texts/" + book + '.' + chapter + '.' + verse + '?context=0';
     
     request({
