@@ -44,6 +44,7 @@ var https = require('https');
 var http = require('http');
 var cheerio = require('cheerio');
 var index = require('index');
+var request = require('request');
 
 /**
  * The AlexaSkill Module that has the AlexaSkill prototype and helper functions
@@ -131,6 +132,10 @@ HistoryBuffSkill.prototype.intentHandlers = {
 	"GetDateIntent": function(intent,session, response){
 		handleDateRequest(intent, session, response);
 	},
+
+    "GetTextIntent": function(intent, session, response){
+        handleTextRequest(intent, session, response);
+    },
 
     "AMAZON.StopIntent": function (intent, session, response) {
         var speechOutput = {
@@ -426,6 +431,49 @@ function handleFirstEventRequest(intent, session, response) {
 //     };
 //     response.askWithCard(speechOutput, repromptOutput, cardTitle, cardContent);
 // }
+
+
+/*
+    I think this might work? Can someone test check?
+*/
+function handleTextRequest(intent, session, response){
+    console.log('hello');
+    // console.log(JSON.stringify(intent.slot));
+    // response.askWithCard('hi', 'repromptOutput', 'cardTitle', 'cardContent');
+
+
+    getJsonVerse(intent.slots.book.value, intent.slots.chapter.value, intent.slots.verse.value, response);
+}
+
+function getJsonVerse(book, chapter, verse, response){
+    var url = "http://www.sefaria.org/api/texts/" + book + '.' + chapter + '.' + verse + '?context=0';
+    
+    request({
+        url: url,
+        json: true
+    }, function (error, response, body) {
+        if (!error && response.statusCode === 200) {
+            callback(body.text);
+            console.log(body.text) // Print the json response
+        }
+    });
+    function callback(text){
+        var speechOutput = {
+            speech: "<speak>" + book + ' chapter ' + chapter + ' verse ' + verse + ': ' + text + "</speak>",
+            type: AlexaSkill.speechOutputType.SSML
+        };
+        var repromptOutput = {
+            speech: 'Please repeat the book, chapter, and verse you want to find',
+            type: AlexaSkill.speechOutputType.PLAIN_TEXT
+        };
+        var cardTitle = "Chapter";
+
+        cardContent = book;
+        response.askWithCard(speechOutput, repromptOutput, cardTitle, cardContent);
+    }
+        // response.askWithCard(speechOutput, repromptOutput, cardTitle, cardContent);
+        // return res.text;
+}
 
 function getJsonEventsFromChabad(date, eventCallback) {
     var url = 'http://www.chabad.org/calendar/view/day.asp?tdate=' + date;
