@@ -44,6 +44,7 @@ var https = require('https');
 var http = require('http');
 var cheerio = require('cheerio');
 var index = require('index');
+var request = require('request');
 
 /**
  * The AlexaSkill Module that has the AlexaSkill prototype and helper functions
@@ -446,29 +447,33 @@ function handleTextRequest(intent, session, response){
 }
 
 function getJsonVerse(book, chapter, verse, response){
-    var url = "http://www.sefaria.org/api/texts" + book + '.' + chapter + '.' + verse + '?context=0';
-    http.get(url, function(res){
-        console.log('res.text:' ,res.text);
-        console.log('res.query:' ,res.query);
-
-        function callback(){
-            var speechOutput = {
-                speech: "<speak>" + 'Genesis, chapter one, verse one: In the beginning God created the heaven and the earth.' + "</speak>",
-                type: AlexaSkill.speechOutputType.SSML
-            };
-            var repromptOutput = {
-                speech: 'Please repeat the book, chapter, and verse you want to find',
-                type: AlexaSkill.speechOutputType.PLAIN_TEXT
-            };
-            var cardTitle = "Chapter";
-
-            cardContent = 'Genesis';
-            response.askWithCard(speechOutput, repromptOutput, cardTitle, cardContent);
+    var url = "http://www.sefaria.org/api/texts/" + book + '.' + chapter + '.' + verse + '?context=0';
+    
+    request({
+        url: url,
+        json: true
+    }, function (error, response, body) {
+        if (!error && response.statusCode === 200) {
+            callback(body.text);
+            console.log(body.text) // Print the json response
         }
-        callback();
+    });
+    function callback(text){
+        var speechOutput = {
+            speech: "<speak>" + book + ' chapter ' + chapter + ' verse ' + verse + ': ' + text + "</speak>",
+            type: AlexaSkill.speechOutputType.SSML
+        };
+        var repromptOutput = {
+            speech: 'Please repeat the book, chapter, and verse you want to find',
+            type: AlexaSkill.speechOutputType.PLAIN_TEXT
+        };
+        var cardTitle = "Chapter";
+
+        cardContent = book;
+        response.askWithCard(speechOutput, repromptOutput, cardTitle, cardContent);
+    }
         // response.askWithCard(speechOutput, repromptOutput, cardTitle, cardContent);
         // return res.text;
-    });
 }
 
 function getJsonEventsFromChabad(date, eventCallback) {
