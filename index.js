@@ -437,7 +437,7 @@ function handleFirstEventRequest(intent, session, response) {
     I think this might work? Can someone test check?
 */
 function handleTextRequest(intent, session, response){
-    console.log('hello');
+    // console.log('hello');
     // console.log(JSON.stringify(intent.slot));
     // response.askWithCard('hi', 'repromptOutput', 'cardTitle', 'cardContent');
 
@@ -448,12 +448,20 @@ function handleTextRequest(intent, session, response){
 function getJsonVerse(book, chapter, verse, response){
 
     // sanitze books
+    var sanitizedBook = book;
+    var sanitize = {
+        'kings 1' : 'I_Kings',
+        'kings 2' : 'II_Kings',
+        'samuel 1': 'I_Samuel',
+        'samuel 2': 'II_Samuel',
+        'chronicles 1' : 'I_Chronicles',
+        'chronicles 2' : 'II_Chronicles',
+    };
+    if (sanitize[sanitizedBook]){
+        sanitizedBook = sanitize[sanitizedBook];
+    }
 
-    /*
-    for kings 1 or kings 2 needs to be i_kings or ii_kings
-    */
-
-    var url = "http://www.sefaria.org/api/texts/" + book + '.' + chapter + '.' + verse + '?context=0';
+    var url = "http://www.sefaria.org/api/texts/" + sanitizedBook + '.' + chapter + '.' + verse + '?context=0';
     
     request({
         url: url,
